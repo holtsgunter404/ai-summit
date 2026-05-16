@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import ChatArea from './components/ChatArea';
@@ -19,8 +19,9 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddNodeOpen, setIsAddNodeOpen] = useState(false);
+  const [openRouterModels, setOpenRouterModels] = useState([]);
 
-  // Memoize providers so they only change when API keys change
+  // Memoize providers
   const providers = useMemo(() => ({
     Google: new GeminiProvider(apiKeys.gemini),
     Perplexity: new PerplexityProvider(apiKeys.perplexity),
@@ -29,16 +30,51 @@ function App() {
     Anthropic: new ClaudeProvider(apiKeys.claude)
   }), [apiKeys]);
 
+  // Fetch OpenRouter models on mount and when key changes
+  useEffect(() => {
+    const fetchORModels = async () => {
+      try {
+        const orModels = await providers.OpenRouter.getModels();
+        setOpenRouterModels(orModels);
+      } catch (err) {
+        console.error('App: Failed to fetch OpenRouter models', err);
+      }
+    };
+    fetchORModels();
+  }, [providers.OpenRouter]);
+
+  // Update node statuses based on API key availability
+  useEffect(() => {
+    const updatedModels = models.map(node => {
+      const provider = providers[node.provider];
+      const hasKey = provider?.isConfigured();
+
+      if (!hasKey && node.status !== 'no_key') {
+        return { ...node, status: 'no_key' };
+      } else if (hasKey && node.status === 'no_key') {
+        return { ...node, status: 'ready' };
+      }
+      return node;
+    });
+
+    if (JSON.stringify(updatedModels) !== JSON.stringify(models)) {
+      setModels(updatedModels);
+    }
+  }, [apiKeys, providers, models, setModels]);
+
   const handleAddNode = (nodeType) => {
+    const provider = providers[nodeType.provider];
+    const hasKey = provider?.isConfigured();
+
     const newNode = {
       id: `node-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       provider: nodeType.provider,
       name: nodeType.name,
-      prompt: '', // Current text in editor
-      activePrompt: '', // Last applied role
+      prompt: '',
+      activePrompt: '',
       selectedModel: nodeType.provider === 'OpenRouter' ? 'meta-llama/llama-3-8b-instruct' : 'default',
       active: true,
-      status: 'ready'
+      status: hasKey ? 'ready' : 'no_key'
     };
     setModels([...models, newNode]);
   };
@@ -65,26 +101,28 @@ function App() {
     const node = models.find(m => m.id === id);
     if (!node) return;
 
-    let orModels = [];
+    let availableModels = [];
     if (node.provider === 'OpenRouter') {
-      orModels = [
-        'meta-llama/llama-3-8b-instruct',
-        'anthropic/claude-3-haiku',
-        'google/gemini-pro-1.5'
-      ];
+      availableModels = openRouterModels.length > 0
+        ? openRouterModels.map(m => m.id)
+        : ['meta-llama/llama-3-8b-instruct', 'anthropic/claude-3-haiku', 'google/gemini-pro-1.5'];
     } else if (node.provider === 'Anthropic') {
-      orModels = ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'];
+      availableModels = ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229', 'claude-3-haiku-20240307'];
     } else if (node.provider === 'Google') {
-      orModels = ['gemini-1.5-pro', 'gemini-1.5-flash'];
-    } else {
-      return;
+      availableModels = ['gemini-1.5-pro', 'gemini-1.5-flash'];
+    } else if (node.provider === 'Perplexity') {
+      availableModels = ['llama-3.1-sonar-small-128k-online', 'llama-3.1-sonar-large-128k-online', 'llama-3.1-sonar-huge-128k-online'];
+    } else if (node.provider === 'Moonshot') {
+      availableModels = ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'];
     }
+
+    if (availableModels.length === 0) return;
 
     setModels(models.map(m => {
       if (m.id === id) {
-        const currentIndex = orModels.indexOf(m.selectedModel);
-        const nextIndex = (currentIndex + 1) % orModels.length;
-        return { ...m, selectedModel: orModels[nextIndex] };
+        const currentIndex = availableModels.indexOf(m.selectedModel);
+        const nextIndex = (currentIndex + 1) % availableModels.length;
+        return { ...m, selectedModel: availableModels[nextIndex] };
       }
       return m;
     }));
@@ -103,39 +141,43 @@ function App() {
     };
     setMessages(prev => [...prev, userMessage]);
 
-    const activeNodes = models.filter(m => m.active);
+    // Only nodes that are active AND have keys
+    const activeNodes = models.filter(m => m.active && m.status !== 'no_key');
 
     activeNodes.forEach(async (node) => {
-      // Update status to busy
       setModels(prev => prev.map(m => m.id === node.id ? { ...m, status: 'busy' } : m));
 
       try {
         const provider = providers[node.provider];
         if (provider) {
-          // Use the ACTIVE role, not the draft text
-          const response = await provider.sendMessage(text, node.activePrompt);
+          const response = await provider.sendMessage(text, node.activePrompt, node.selectedModel);
 
-          setTimeout(() => {
-            setMessages(prev => [...prev, {
-              role: 'bot',
-              modelName: `${node.provider} Node (${node.selectedModel})`,
-              content: response,
-              timestamp: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
-            }]);
+          setMessages(prev => [...prev, {
+            role: 'bot',
+            modelName: `${node.provider} Node (${node.selectedModel})`,
+            content: response,
+            timestamp: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          }]);
 
-            // Set back to ready
-            setModels(prev => prev.map(m => m.id === node.id ? { ...m, status: 'ready' } : m));
-          }, Math.random() * 1000 + 500);
+          setModels(prev => prev.map(m => m.id === node.id ? { ...m, status: 'ready' } : m));
         }
       } catch (err) {
+        console.error(`Error from ${node.name}:`, err);
+        setMessages(prev => [...prev, {
+          role: 'bot',
+          modelName: `${node.provider} Node (${node.selectedModel})`,
+          content: `ERROR: ${err.message}`,
+          isError: true,
+          timestamp: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        }]);
         setModels(prev => prev.map(m => m.id === node.id ? { ...m, status: 'error' } : m));
       }
     });
   };
 
   return (
-    <div className="flex h-screen overflow-hidden text-slate-300 bg-background relative font-sans">
-      <div className="crt-overlay" />
+    <div className="flex h-screen overflow-hidden text-slate-300 bg-[#0d0221] relative font-sans">
+      <div className="crt-overlay pointer-events-none" />
 
       <Sidebar
         models={models}

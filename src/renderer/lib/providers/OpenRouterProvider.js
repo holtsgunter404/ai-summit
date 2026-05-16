@@ -1,25 +1,55 @@
 import { BaseProvider } from './BaseProvider';
 
 export class OpenRouterProvider extends BaseProvider {
-  constructor(apiKey, modelId = 'meta-llama/llama-3-8b-instruct') {
+  constructor(apiKey) {
     super(apiKey);
-    this.modelId = modelId;
   }
 
-  async sendMessage(message, systemPrompt) {
+  async sendMessage(message, systemPrompt, modelId) {
     if (!this.isConfigured()) {
-      return `[OPENROUTER MOCK] Model: ${this.modelId}\nSystem: ${systemPrompt}\n\nNo API key. Falling back to mock for: ${message}`;
+      throw new Error('OpenRouter API key is missing');
     }
-    // Future implementation: call OpenRouter API with this.modelId
-    return `[OPENROUTER REAL (Mocked)] Model: ${this.modelId}\nProcessed "${message}"`;
+
+    const messages = [];
+    if (systemPrompt) {
+      messages.push({ role: 'system', content: systemPrompt });
+    }
+    messages.push({ role: 'user', content: message });
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://github.com/jules/ai-summit',
+        'X-Title': 'AI Summit'
+      },
+      body: JSON.stringify({
+        model: modelId || 'meta-llama/llama-3-8b-instruct',
+        messages: messages
+      })
+    });
+
+    const data = await this.handleResponse(response);
+    return data.choices[0].message.content;
   }
 
   async getModels() {
-    // Future implementation: fetch from OpenRouter /models endpoint
-    return [
-      { id: 'meta-llama/llama-3-8b-instruct', name: 'Llama 3 8B' },
-      { id: 'anthropic/claude-3-haiku', name: 'Claude 3 Haiku' },
-      { id: 'google/gemini-pro-1.5', name: 'Gemini Pro 1.5' },
-    ];
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/models');
+      const data = await this.handleResponse(response);
+      return data.data.map(m => ({
+        id: m.id,
+        name: m.name
+      }));
+    } catch (error) {
+      console.error('Failed to fetch OpenRouter models:', error);
+      // Fallback if API fails
+      return [
+        { id: 'meta-llama/llama-3-8b-instruct', name: 'Llama 3 8B (Fallback)' },
+        { id: 'anthropic/claude-3-haiku', name: 'Claude 3 Haiku (Fallback)' },
+        { id: 'google/gemini-pro-1.5', name: 'Gemini Pro 1.5 (Fallback)' },
+      ];
+    }
   }
 }
