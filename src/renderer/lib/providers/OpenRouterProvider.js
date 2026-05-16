@@ -16,13 +16,14 @@ export class OpenRouterProvider extends BaseProvider {
     }
     messages.push({ role: 'user', content: message });
 
+    // OpenRouter requires specific headers to avoid "User not found" and other errors
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://github.com/jules/ai-summit',
-        'X-Title': 'AI Summit'
+        'HTTP-Referer': 'https://github.com/jules/ai-summit', // Required by some models/OpenRouter
+        'X-Title': 'AI Summit Desktop'
       },
       body: JSON.stringify({
         model: modelId || 'meta-llama/llama-3-8b-instruct',
@@ -31,7 +32,12 @@ export class OpenRouterProvider extends BaseProvider {
     });
 
     const data = await this.handleResponse(response);
-    return data.choices[0].message.content;
+
+    if (data.choices && data.choices[0]?.message?.content) {
+      return data.choices[0].message.content;
+    }
+
+    throw new Error(data.error?.message || 'Unexpected response format from OpenRouter');
   }
 
   async getModels() {
@@ -43,12 +49,10 @@ export class OpenRouterProvider extends BaseProvider {
         name: m.name
       }));
     } catch (error) {
-      console.error('Failed to fetch OpenRouter models:', error);
-      // Fallback if API fails
+      console.error('OpenRouter: Failed to fetch models', error);
       return [
         { id: 'meta-llama/llama-3-8b-instruct', name: 'Llama 3 8B (Fallback)' },
-        { id: 'anthropic/claude-3-haiku', name: 'Claude 3 Haiku (Fallback)' },
-        { id: 'google/gemini-pro-1.5', name: 'Gemini Pro 1.5 (Fallback)' },
+        { id: 'anthropic/claude-3-haiku', name: 'Claude 3 Haiku (Fallback)' }
       ];
     }
   }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Power, Terminal, Settings2, Cpu, Globe, Zap, Send, ShieldAlert, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react';
+import { Power, Terminal, Settings2, Cpu, Globe, Zap, Send, ShieldAlert, CheckCircle2, Loader2, AlertTriangle, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const ProviderIcon = ({ provider, size = 16 }) => {
@@ -44,24 +44,24 @@ const StatusBadge = ({ status }) => {
   }
 };
 
-const ModelCard = ({ model, onToggle, onPromptChange, onModelSelect, onApplyRole }) => {
+const ModelCard = ({ model, onToggle, onPromptChange, onModelSelect, onApplyRole, availableModels = [] }) => {
   const isApplied = model.prompt === model.activePrompt && model.prompt !== '';
   const isUnconfigured = model.status === 'no_key';
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, x: -20 }}
+      initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      className={`sidebar-node-card p-3 rounded border transition-all ${
+      className={`p-3 rounded border transition-all ${
         model.active ? 'border-cyan/30 bg-cyan/5' : 'border-white/5 bg-white/2'
       } ${isUnconfigured ? 'opacity-70 grayscale-[0.5]' : ''}`}
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-hidden">
           <ProviderIcon provider={model.provider} />
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-white leading-none uppercase tracking-tighter">
+          <div className="flex flex-col min-w-0">
+            <span className="text-[10px] font-black text-white leading-none uppercase tracking-tighter truncate">
               {model.name}
             </span>
             <StatusBadge status={model.status} />
@@ -69,10 +69,9 @@ const ModelCard = ({ model, onToggle, onPromptChange, onModelSelect, onApplyRole
         </div>
         <button
           onClick={() => onToggle(model.id)}
-          className={`p-1.5 rounded transition-colors ${
+          className={`p-1.5 rounded transition-colors flex-shrink-0 ${
             model.active ? 'text-cyan bg-cyan/10' : 'text-slate-600 bg-white/5'
           }`}
-          title={isUnconfigured ? "Key Required" : "Toggle Active"}
         >
           <Power size={14} />
         </button>
@@ -80,31 +79,38 @@ const ModelCard = ({ model, onToggle, onPromptChange, onModelSelect, onApplyRole
 
       <div className="space-y-2">
         <div className="flex flex-col gap-1">
-          <label className="text-[9px] uppercase font-bold text-slate-500 flex justify-between">
-            <span>Model_Selection</span>
-            <span className="text-slate-700 font-mono">ID: {model.id.split('-')[1]}</span>
-          </label>
-          <button
-            onClick={() => onModelSelect(model.id)}
-            className="w-full text-left bg-black/40 border border-white/5 rounded px-2 py-1 text-[9px] font-mono text-slate-400 hover:border-cyan/30 transition-all truncate"
-            disabled={isUnconfigured}
-          >
-            {model.selectedModel === 'default' ? 'AUTO_SELECT' : model.selectedModel}
-          </button>
+          <label className="text-[9px] uppercase font-bold text-slate-500">Model_Selection</label>
+          <div className="relative group/select">
+            <select
+              value={model.selectedModel}
+              onChange={(e) => onModelSelect(model.id, e.target.value)}
+              disabled={isUnconfigured}
+              className="w-full appearance-none bg-black/40 border border-white/5 rounded px-2 py-1.5 text-[9px] font-mono text-slate-400 hover:border-cyan/30 focus:outline-none focus:border-cyan/50 transition-all cursor-pointer pr-6 custom-scrollbar"
+            >
+              {availableModels.length > 0 ? (
+                availableModels.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))
+              ) : (
+                <option value={model.selectedModel}>{model.selectedModel}</option>
+              )}
+            </select>
+            <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none group-hover/select:text-cyan transition-colors" />
+          </div>
         </div>
 
         <div className="flex flex-col gap-1">
           <div className="flex justify-between items-center">
-            <label className="text-[9px] uppercase font-bold text-slate-500">Applied_Role</label>
-            {model.prompt !== model.activePrompt && (
-              <span className="text-[8px] text-yellow-500/70 italic uppercase">Unsaved_Changes</span>
+            <label className="text-[9px] uppercase font-bold text-slate-500">System_Role</label>
+            {model.prompt !== model.activePrompt && model.prompt !== '' && (
+              <span className="text-[7px] text-yellow-500/70 italic uppercase animate-pulse">Modified</span>
             )}
           </div>
           <div className="relative">
             <textarea
               value={model.prompt}
               onChange={(e) => onPromptChange(model.id, e.target.value)}
-              placeholder="Inject system instructions..."
+              placeholder="System prompt..."
               disabled={isUnconfigured}
               className="w-full bg-black/40 border border-white/5 rounded p-2 text-[10px] font-mono text-slate-300 placeholder:text-slate-800 focus:outline-none focus:border-cyan/50 h-16 resize-none custom-scrollbar"
             />

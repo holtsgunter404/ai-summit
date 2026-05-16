@@ -3,9 +3,6 @@ import { X, Shield, Cpu, Globe, Zap, Send, Terminal } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Settings = ({ isOpen, onClose, apiKeys, onSaveKey }) => {
-  // If we want to ensure it's always rendered correctly when open,
-  // we check the isOpen prop, although AnimatePresence in App.jsx handles mounting.
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -19,7 +16,7 @@ const Settings = ({ isOpen, onClose, apiKeys, onSaveKey }) => {
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl retro-card retro-border p-6 relative flex flex-col max-h-[90vh] bg-[#0d0221]"
+        className="w-full max-w-xl bg-[#0d0221] border border-purple-light/20 rounded-xl p-6 relative flex flex-col max-h-[90vh] shadow-[0_0_30px_rgba(157,78,221,0.2)]"
       >
         <button
           onClick={onClose}
@@ -38,7 +35,7 @@ const Settings = ({ isOpen, onClose, apiKeys, onSaveKey }) => {
         <div className="space-y-6 overflow-y-auto pr-3 custom-scrollbar flex-1 pb-4">
           {/* Gemini */}
           <div className="space-y-2 group">
-            <label className="flex items-center gap-2 text-[10px] font-black text-cyan uppercase tracking-[0.2em] group-hover:text-cyan/100 transition-colors">
+            <label className="flex items-center gap-2 text-[10px] font-black text-cyan uppercase tracking-[0.2em]">
               <Cpu size={14} />
               GOOGLE_GEMINI_PROTOCOL
             </label>
@@ -53,7 +50,7 @@ const Settings = ({ isOpen, onClose, apiKeys, onSaveKey }) => {
 
           {/* Perplexity */}
           <div className="space-y-2 group">
-            <label className="flex items-center gap-2 text-[10px] font-black text-orange-500 uppercase tracking-[0.2em] group-hover:text-orange-400 transition-colors">
+            <label className="flex items-center gap-2 text-[10px] font-black text-orange-500 uppercase tracking-[0.2em]">
               <Globe size={14} />
               PERPLEXITY_AI_PROTOCOL
             </label>
@@ -68,7 +65,7 @@ const Settings = ({ isOpen, onClose, apiKeys, onSaveKey }) => {
 
           {/* OpenRouter */}
           <div className="space-y-2 group">
-            <label className="flex items-center gap-2 text-[10px] font-black text-yellow-400 uppercase tracking-[0.2em] group-hover:text-yellow-300 transition-colors">
+            <label className="flex items-center gap-2 text-[10px] font-black text-yellow-400 uppercase tracking-[0.2em]">
               <Zap size={14} />
               OPENROUTER_GATEWAY
             </label>
@@ -83,7 +80,7 @@ const Settings = ({ isOpen, onClose, apiKeys, onSaveKey }) => {
 
           {/* Kimi */}
           <div className="space-y-2 group">
-            <label className="flex items-center gap-2 text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] group-hover:text-emerald-300 transition-colors">
+            <label className="flex items-center gap-2 text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">
               <Terminal size={14} />
               MOONSHOT_KIMI_PROCESSOR
             </label>
@@ -98,7 +95,7 @@ const Settings = ({ isOpen, onClose, apiKeys, onSaveKey }) => {
 
           {/* Claude */}
           <div className="space-y-2 group">
-            <label className="flex items-center gap-2 text-[10px] font-black text-pink-500 uppercase tracking-[0.2em] group-hover:text-pink-400 transition-colors">
+            <label className="flex items-center gap-2 text-[10px] font-black text-pink-500 uppercase tracking-[0.2em]">
               <Send size={14} className="rotate-45" />
               ANTHROPIC_CLAUDE_NEURAL_LINK
             </label>

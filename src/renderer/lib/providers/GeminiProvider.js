@@ -5,25 +5,23 @@ export class GeminiProvider extends BaseProvider {
     super(apiKey);
   }
 
-  async sendMessage(message, systemPrompt, modelId = 'gemini-1.5-pro') {
+  async sendMessage(message, systemPrompt, modelId = 'models/gemini-1.5-flash') {
     if (!this.isConfigured()) {
       throw new Error('Gemini API key is missing');
     }
 
-    // Google Gemini uses a slightly different structure
-    // Endpoint: https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${this.apiKey}`;
-
-    const contents = [];
-    if (systemPrompt) {
-      // For Gemini, system instructions are often passed separately or as a specific role
-      // In v1beta, they have a system_instruction field.
-    }
+    // Google Gemini v1beta endpoint
+    // Model ID should already contain 'models/' prefix if from getModels
+    const modelPath = modelId.startsWith('models/') ? modelId : `models/${modelId}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent?key=${this.apiKey}`;
 
     const body = {
       contents: [{
         parts: [{ text: message }]
-      }]
+      }],
+      generationConfig: {
+        maxOutputTokens: 2048,
+      }
     };
 
     if (systemPrompt) {
@@ -47,5 +45,28 @@ export class GeminiProvider extends BaseProvider {
     }
 
     throw new Error('Unexpected response format from Gemini');
+  }
+
+  async getModels() {
+    if (!this.isConfigured()) return [];
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`);
+      const data = await this.handleResponse(response);
+
+      // Filter for models that support generateContent
+      return data.models
+        .filter(m => m.supportedGenerationMethods.includes('generateContent'))
+        .map(m => ({
+          id: m.name, // e.g. "models/gemini-1.5-flash"
+          name: m.displayName
+        }));
+    } catch (error) {
+      console.error('Gemini: Failed to fetch models', error);
+      return [
+        { id: 'models/gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
+        { id: 'models/gemini-1.5-pro', name: 'Gemini 1.5 Pro' }
+      ];
+    }
   }
 }
