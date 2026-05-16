@@ -1,9 +1,9 @@
 import React from 'react';
 import ModelCard from './ModelCard';
-import { Terminal, Settings as SettingsIcon, LogOut, Cpu } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Terminal, Settings as SettingsIcon, LogOut, Cpu, Plus, Layers } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const Sidebar = ({ models, onToggle, onPromptChange, onModelSelect, onOpenSettings }) => {
+const Sidebar = ({ models, onToggle, onPromptChange, onModelSelect, onOpenSettings, onOpenAddNode, onApplyRole }) => {
   return (
     <aside className="w-80 h-screen bg-sidebar-bg border-r border-purple-light/20 flex flex-col relative z-50">
       {/* Scanline decoration */}
@@ -29,28 +29,51 @@ const Sidebar = ({ models, onToggle, onPromptChange, onModelSelect, onOpenSettin
       </div>
 
       {/* Model List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-        <div className="flex items-center justify-between px-2 mb-2">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar relative">
+        <div className="flex items-center justify-between px-2 mb-2 sticky top-0 bg-sidebar-bg/80 backdrop-blur-sm z-10 py-1">
           <h2 className="text-[10px] font-bold text-purple-light uppercase tracking-widest">
-            Active Nodes
+            Neural Nodes
           </h2>
-          <div className="flex items-center gap-2">
-             <div className="w-2 h-2 rounded-full bg-cyan animate-pulse shadow-[0_0_8px_#00f5d4]" />
-             <span className="text-[10px] font-mono text-cyan">
-              {models.filter(m => m.active).length} online
-             </span>
-          </div>
+          <button
+            onClick={onOpenAddNode}
+            className="w-6 h-6 rounded bg-purple-light/20 flex items-center justify-center text-cyan hover:bg-cyan hover:text-background transition-all shadow-[0_0_10px_rgba(0,245,212,0.1)]"
+          >
+            <Plus size={16} strokeWidth={3} />
+          </button>
         </div>
 
-        {models.map(model => (
-          <ModelCard
-            key={model.id}
-            model={model}
-            onToggle={onToggle}
-            onPromptChange={onPromptChange}
-            onModelSelect={onModelSelect}
-          />
-        ))}
+        <div className="space-y-4">
+          {models.length === 0 ? (
+            <div className="py-12 px-4 text-center space-y-4">
+              <div className="w-12 h-12 rounded-full border-2 border-dashed border-purple-light/20 flex items-center justify-center mx-auto text-purple-light/30">
+                <Layers size={24} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-tighter">No Nodes Detected</p>
+                <p className="text-[10px] text-slate-600 font-mono mt-1 leading-relaxed">
+                  Press [+] to instantiate your first neural processor
+                </p>
+              </div>
+              <button
+                onClick={onOpenAddNode}
+                className="text-[10px] font-black text-cyan uppercase border-b border-cyan/30 hover:border-cyan transition-all pb-0.5"
+              >
+                Initialize Node
+              </button>
+            </div>
+          ) : (
+            models.map(model => (
+              <ModelCard
+                key={model.id}
+                model={model}
+                onToggle={onToggle}
+                onPromptChange={onPromptChange}
+                onModelSelect={onModelSelect}
+                onApplyRole={onApplyRole}
+              />
+            ))
+          )}
+        </div>
       </div>
 
       {/* Footer / Actions */}
@@ -70,8 +93,8 @@ const Sidebar = ({ models, onToggle, onPromptChange, onModelSelect, onOpenSettin
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-bold text-white uppercase truncate">Operator_Alpha</p>
             <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan" />
-              <p className="text-[9px] text-slate-500 font-mono">STATUS: STABLE</p>
+              <div className="w-1.5 h-1.5 rounded-full bg-cyan shadow-[0_0_5px_#00f5d4]" />
+              <p className="text-[9px] text-slate-500 font-mono uppercase tracking-tighter">STABLE_LINK</p>
             </div>
           </div>
           <button className="text-slate-600 hover:text-magenta transition-colors">

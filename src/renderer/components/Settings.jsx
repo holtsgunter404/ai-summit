@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Key, Shield, Cpu, Globe } from 'lucide-react';
+import { X, Key, Shield, Cpu, Globe, Zap, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Settings = ({ isOpen, onClose, apiKeys, onSaveKey }) => {
@@ -17,7 +17,7 @@ const Settings = ({ isOpen, onClose, apiKeys, onSaveKey }) => {
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.9, y: 20 }}
-          className="w-full max-w-2xl retro-card retro-border p-8 relative"
+          className="w-full max-w-2xl retro-card retro-border p-8 relative max-h-[90vh] overflow-y-auto custom-scrollbar"
         >
           <button
             onClick={onClose}
@@ -67,7 +67,7 @@ const Settings = ({ isOpen, onClose, apiKeys, onSaveKey }) => {
             {/* OpenRouter */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-xs font-bold text-yellow uppercase tracking-widest">
-                <Key size={14} />
+                <Zap size={14} />
                 OpenRouter API Key
               </label>
               <input
@@ -76,6 +76,36 @@ const Settings = ({ isOpen, onClose, apiKeys, onSaveKey }) => {
                 value={apiKeys.openrouter || ''}
                 onChange={(e) => onSaveKey('openrouter', e.target.value)}
                 className="w-full bg-background/50 border border-purple-light/30 rounded-lg py-3 px-4 text-white focus:outline-none focus:border-yellow transition-all"
+              />
+            </div>
+
+            {/* Kimi */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-xs font-bold text-cyan uppercase tracking-widest">
+                <Terminal size={14} className="text-cyan" />
+                Moonshot Kimi API Key
+              </label>
+              <input
+                type="password"
+                placeholder="Enter Kimi Key..."
+                value={apiKeys.kimi || ''}
+                onChange={(e) => onSaveKey('kimi', e.target.value)}
+                className="w-full bg-background/50 border border-purple-light/30 rounded-lg py-3 px-4 text-white focus:outline-none focus:border-cyan transition-all"
+              />
+            </div>
+
+            {/* Claude */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-xs font-bold text-magenta uppercase tracking-widest">
+                <Send size={14} className="rotate-45" />
+                Anthropic Claude API Key
+              </label>
+              <input
+                type="password"
+                placeholder="Enter Claude Key..."
+                value={apiKeys.claude || ''}
+                onChange={(e) => onSaveKey('claude', e.target.value)}
+                className="w-full bg-background/50 border border-purple-light/30 rounded-lg py-3 px-4 text-white focus:outline-none focus:border-magenta transition-all"
               />
             </div>
           </div>
