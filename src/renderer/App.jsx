@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import ChatArea from './components/ChatArea';
 import Settings from './components/Settings';
@@ -153,18 +154,26 @@ function App() {
         />
       </main>
 
-      <Settings
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        apiKeys={apiKeys}
-        onSaveKey={handleSaveKey}
-      />
+      <AnimatePresence>
+        {isSettingsOpen && (
+          <Settings
+            isOpen={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+            apiKeys={apiKeys}
+            onSaveKey={handleSaveKey}
+          />
+        )}
+      </AnimatePresence>
 
-      <AddNodeModal
-        isOpen={isAddNodeOpen}
-        onClose={() => setIsAddNodeOpen(false)}
-        onAddNode={handleAddNode}
-      />
+      <AnimatePresence>
+        {isAddNodeOpen && (
+          <AddNodeModal
+            isOpen={isAddNodeOpen}
+            onClose={() => setIsAddNodeOpen(false)}
+            onAddNode={handleAddNode}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
