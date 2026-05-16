@@ -34,18 +34,21 @@ function App() {
   // Fetch models for providers that support it
   useEffect(() => {
     const fetchModels = async () => {
+      // Clear previous list to ensure user sees "loading" or empty if key is invalid
+      setOpenRouterModels([]);
+
       try {
         const orModels = await providers.OpenRouter.getModels();
         setOpenRouterModels(orModels);
       } catch (err) {
-        console.error('Failed to fetch OpenRouter models', err);
+        console.error('App: Failed to fetch OpenRouter models', err);
       }
 
       try {
         const gModels = await providers.Google.getModels();
         setGeminiModels(gModels);
       } catch (err) {
-        console.error('Failed to fetch Gemini models', err);
+        console.error('App: Failed to fetch Gemini models', err);
       }
     };
     fetchModels();
@@ -149,7 +152,7 @@ function App() {
         setMessages(prev => [...prev, {
           role: 'bot',
           modelName: `${node.provider} Node`,
-          content: `ERROR: ${err.message}`,
+          content: `${err.message}`,
           isError: true,
           timestamp: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
         }]);
