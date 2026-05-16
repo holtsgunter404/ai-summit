@@ -1,6 +1,6 @@
 {
   "name": "ai-summit",
-  "version": "1.0.0",
+  "version": "2.0.4",
   "description": "Multi-model AI Desktop Application",
   "main": "electron/main.js",
   "type": "module",
@@ -9,10 +9,34 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "electron .",
-    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\""
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "dist": "npm run build && electron-builder"
+  },
+  "build": {
+    "appId": "com.aisummit.app",
+    "productName": "AI Summit",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "asar": true
   },
   "keywords": [],
-  "author": "",
+  "author": "AI Summit Team",
   "license": "ISC",
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.0",
